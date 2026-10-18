@@ -352,6 +352,16 @@
   font-variant-numeric: tabular-nums;
   animation: price-pop 0.7s cubic-bezier(0.3, 1.5, 0.5, 1) both;
 }
+.result__price--range {
+  font-size: clamp(2.4rem, 6.2vw, 4.2rem);
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .result__price--range {
+    font-size: clamp(1.8rem, 7.5vw, 2.5rem);
+    white-space: normal;
+  }
+}
 @keyframes price-pop {
   from { opacity: 0; transform: scale(0.6); }
 }

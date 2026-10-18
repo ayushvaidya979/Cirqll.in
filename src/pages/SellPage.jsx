@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { CATEGORIES, AGES, CONDITIONS, estimate } from '../data/pricing.js'
+import { CATEGORIES, AGES, CONDITIONS, estimate, getRandomDeadRange } from '../data/pricing.js'
 import { DeviceArt, Stage, PickupStage } from '../components/DeviceDoodles.jsx'
 import Pickup from './Pickup.jsx'
 import PhotoStep from './PhotoStep.jsx'
@@ -45,7 +45,7 @@ const rupees = (n) => '₹' + n.toLocaleString('en-IN')
 export default function SellPage() {
   const [step, setStep] = useState(0)
   const [dir, setDir] = useState(1)
-  const EMPTY = { category: null, brand: null, model: null, age: null, condition: null, basePrice: null, scanned: null }
+  const EMPTY = { category: null, brand: null, model: null, age: null, condition: null, basePrice: null, deadRange: null, scanned: null }
   const [pick, setPick] = useState(EMPTY)
   const [modelSearch, setModelSearch] = useState('')
   const timer = useRef(0)
@@ -67,10 +67,19 @@ export default function SellPage() {
   const brand = cat?.brands.find((b) => b.id === pick.brand)
   const age = AGES.find((a) => a.id === pick.age)
   const cond = CONDITIONS.find((c) => c.id === pick.condition)
-  const price = estimate(pick.category, pick.brand, pick.age, pick.condition, pick.basePrice)
+  const priceInfo = estimate(pick.category, pick.brand, pick.age, pick.condition, pick.basePrice, pick.deadRange)
   const deviceName = pick.model || (brand && cat ? `${brand.name === 'Other' ? '' : brand.name + ' '}${cat.name}` : '')
   const done = step === RESULT
-  const shownPrice = useCountUp(price, done)
+
+  const isRange = Boolean(priceInfo?.isRange)
+  const shownPrice = useCountUp(priceInfo?.amount || 0, done)
+  const shownMin = useCountUp(priceInfo?.min || 0, done)
+  const shownMax = useCountUp(priceInfo?.max || 0, done)
+
+  const payoutFormatted = priceInfo?.formatted || ''
+  const displayedPrice = isRange
+    ? `${rupees(shownMin)} – ${rupees(shownMax)}`
+    : rupees(shownPrice)
 
   const go = (to) => {
     clearTimeout(timer.current)
@@ -82,11 +91,20 @@ export default function SellPage() {
   const choose = (key, value, extra = {}) => {
     setPick((p) => {
       const next = { ...p, [key]: value, ...extra }
+      // If choosing dead condition, assign a randomized deadRange for this valuation
+      if (key === 'condition') {
+        if (value === 'dead') {
+          next.deadRange = getRandomDeadRange(p.category || 'phone')
+        } else {
+          next.deadRange = null
+        }
+      }
       // A different device type means its brand and model list changes too.
       if (key === 'category' && value !== p.category) {
         next.brand = null
         next.model = null
         next.basePrice = null
+        next.deadRange = null
       }
       // A different brand drops any selected model.
       if (key === 'brand' && value !== p.brand) {
@@ -304,7 +322,7 @@ export default function SellPage() {
               {step === RESULT && pickup && (
                 <Pickup
                   summary={`${deviceName} · ${cond?.name}`}
-                  payout={rupees(price)}
+                  payout={payoutFormatted}
                   onPhase={(phase, match) => setPickup({ phase, match })}
                   onBack={() => setPickup(null)}
                 />
@@ -313,13 +331,17 @@ export default function SellPage() {
               {step === RESULT && !pickup && (
                 <div className="result">
                   <p className="result__eyebrow">You’ll receive</p>
-                  <p className="result__price">
-                    {rupees(shownPrice)}
+                  <p className={`result__price ${isRange ? 'result__price--range' : ''}`}>
+                    {displayedPrice}
                     <span className="burst" aria-hidden="true">
                       {Array.from({ length: 12 }, (_, i) => <i key={i} style={{ '--i': i }} />)}
                     </span>
                   </p>
-                  <p className="result__note">Estimated payout after recycling. The final amount is confirmed when we inspect your device at pickup.</p>
+                  <p className="result__note">
+                    {isRange
+                      ? 'Estimated recycler scrap payout range for non-functional hardware. The final amount is confirmed when we inspect your device at pickup.'
+                      : 'Estimated payout after recycling. The final amount is confirmed when we inspect your device at pickup.'}
+                  </p>
 
                   <ul className="result__summary">
                     {[
