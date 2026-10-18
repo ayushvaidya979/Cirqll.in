@@ -8,9 +8,13 @@ import { Icons, Leaf } from '../components/Doodles.jsx'
 import { Link } from '../router.jsx'
 import './SellPage.css'
 
-const STEPS = ['Device', 'Brand', 'Age', 'Condition', 'Photo', 'Your price']
-const PHOTO = 4
-const RESULT = 5
+const STEPS = ['Device', 'Brand', 'Model', 'Age', 'Condition', 'Photo', 'Your price']
+const BRAND = 1
+const MODEL = 2
+const AGE = 3
+const CONDITION = 4
+const PHOTO = 5
+const RESULT = 6
 
 const AUTO_ADVANCE_MS = 380
 
@@ -41,8 +45,9 @@ const rupees = (n) => '₹' + n.toLocaleString('en-IN')
 export default function SellPage() {
   const [step, setStep] = useState(0)
   const [dir, setDir] = useState(1)
-  const EMPTY = { category: null, brand: null, age: null, condition: null, model: null, basePrice: null, scanned: null }
+  const EMPTY = { category: null, brand: null, model: null, age: null, condition: null, basePrice: null, scanned: null }
   const [pick, setPick] = useState(EMPTY)
+  const [modelSearch, setModelSearch] = useState('')
   const timer = useRef(0)
   const [pickup, setPickup] = useState(null) // null | { phase, match }
 
@@ -53,6 +58,10 @@ export default function SellPage() {
       clearTimeout(timer.current)
     }
   }, [])
+
+  useEffect(() => {
+    setModelSearch('')
+  }, [pick.brand, step])
 
   const cat = CATEGORIES.find((c) => c.id === pick.category)
   const brand = cat?.brands.find((b) => b.id === pick.brand)
@@ -70,13 +79,20 @@ export default function SellPage() {
     setStep(to)
   }
 
-  const choose = (key, value) => {
+  const choose = (key, value, extra = {}) => {
     setPick((p) => {
-      const next = { ...p, [key]: value }
-      // A different device type means its brand list changes too.
-      if (key === 'category' && value !== p.category) next.brand = null
-      // Picking device or brand by hand drops any model found by a photo scan.
-      if (key === 'category' || key === 'brand') Object.assign(next, { model: null, basePrice: null, scanned: null })
+      const next = { ...p, [key]: value, ...extra }
+      // A different device type means its brand and model list changes too.
+      if (key === 'category' && value !== p.category) {
+        next.brand = null
+        next.model = null
+        next.basePrice = null
+      }
+      // A different brand drops any selected model.
+      if (key === 'brand' && value !== p.brand) {
+        next.model = null
+        next.basePrice = null
+      }
       return next
     })
     clearTimeout(timer.current)
@@ -90,7 +106,7 @@ export default function SellPage() {
 
   const fromScan = (m) => ({ category: m.category, brand: m.brand_id, model: m.model, basePrice: m.base_price ?? null, scanned: m })
 
-  // Arrived from "Scan device" on the home page: device + brand are known, start at the age question.
+  // Arrived from "Scan device" on the home page: device + brand + model are known, start at the age question.
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(SCAN_HANDOFF_KEY)
@@ -98,7 +114,7 @@ export default function SellPage() {
       sessionStorage.removeItem(SCAN_HANDOFF_KEY)
       setPick({ ...EMPTY, ...fromScan(JSON.parse(raw)) })
       setDir(1)
-      setStep(2)
+      setStep(AGE)
     } catch {
       /* storage unavailable: start normally */
     }
@@ -122,6 +138,7 @@ export default function SellPage() {
   const caption = pickupCaption || [
     'Every old device has a story. Let’s find out what yours is worth.',
     `A ${cat?.name.toLowerCase()}! Who made it?`,
+    `Which ${brand?.name || ''} ${cat?.name.toLowerCase()} is it?`,
     pick.model ? `A ${pick.model}. How long has it been with you?` : `A ${brand?.name === 'Other' ? 'trusty' : brand?.name} ${cat?.name.toLowerCase()}. How long has it been with you?`,
     `${age?.label}. How is it holding up?`,
     `Snap a quick photo of your ${deviceName} so we can verify it.`,
@@ -191,7 +208,48 @@ export default function SellPage() {
                 </>
               )}
 
-              {step === 2 && (
+              {step === MODEL && cat && brand && (
+                <>
+                  <h2>Choose the model</h2>
+                  <p className="panel__hint">Which {brand.name} {cat.name.toLowerCase()} is it?</p>
+                  {(brand.models || []).length > 6 && (
+                    <div className="model-search">
+                      <Icons.scan width="16" height="16" />
+                      <input
+                        type="text"
+                        placeholder={`Search ${brand.name} models (e.g. Pro, Ultra, Air…)`}
+                        value={modelSearch}
+                        onChange={(e) => setModelSearch(e.target.value)}
+                        autoFocus
+                      />
+                      {modelSearch && (
+                        <button type="button" className="model-search__clear" onClick={() => setModelSearch('')} aria-label="Clear search">
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  <div className="opts opts--brand opts--model">
+                    {(brand.models || [])
+                      .filter((m) => !modelSearch || m.name.toLowerCase().includes(modelSearch.toLowerCase()))
+                      .map((m, i) => (
+                        <button
+                          key={m.id || m.name}
+                          type="button"
+                          style={{ '--i': i }}
+                          className={`opt opt--brand ${pick.model === m.name ? 'is-picked' : ''}`}
+                          onClick={() => choose('model', m.name, { basePrice: m.base })}
+                        >
+                          <span className="opt__initial">{m.name.includes('Other') ? '…' : m.name[0]}</span>
+                          <strong>{m.name}</strong>
+                          <span className="opt__check"><Icons.check width="14" height="14" /></span>
+                        </button>
+                      ))}
+                  </div>
+                </>
+              )}
+
+              {step === AGE && (
                 <>
                   <h2>How old is it?</h2>
                   <p className="panel__hint">Roughly how long ago was it bought?</p>
@@ -212,7 +270,7 @@ export default function SellPage() {
                 </>
               )}
 
-              {step === 3 && cat && (
+              {step === CONDITION && cat && (
                 <>
                   <h2>What condition is it in?</h2>
                   <p className="panel__hint">Be honest. We check it at pickup anyway.</p>
@@ -265,10 +323,11 @@ export default function SellPage() {
 
                   <ul className="result__summary">
                     {[
-                      ['Device', pick.model || cat?.name, 0],
+                      ['Device', cat?.name, 0],
                       ['Brand', brand?.name, 1],
-                      ['Age', age?.label, 2],
-                      ['Condition', cond?.name, 3],
+                      ['Model', pick.model || 'Standard', 2],
+                      ['Age', age?.label, 3],
+                      ['Condition', cond?.name, 4],
                     ].map(([k, v, s], i) => (
                       <li key={k} style={{ '--i': i }}>
                         <span>{k}</span>
@@ -300,7 +359,7 @@ export default function SellPage() {
             {pickup ? (
               <PickupStage phase={pickup.phase} name={pickup.match?.name} />
             ) : (
-              <Stage category={pick.category} brand={brand} age={age} condition={pick.condition} done={done} />
+              <Stage category={pick.category} brand={brand} model={pick.model} age={age} condition={pick.condition} done={done} />
             )}
             <p key={`${step}-${pickup?.phase ?? ''}`} className="story__caption">{caption}</p>
           </aside>

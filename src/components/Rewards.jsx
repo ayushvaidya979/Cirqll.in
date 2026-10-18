@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Section } from './Sections.jsx'
 import { DotGrid, Icons, Sparkle } from './Doodles.jsx'
+import { useSession } from '../lib/auth.js'
+import { navigate } from '../router.jsx'
 import './Rewards.css'
 
 /*
@@ -28,8 +30,49 @@ const store = {
   },
 }
 
+// Clean up any stale legacy global artifacts from earlier tests
+if (typeof window !== 'undefined') {
+  try {
+    localStorage.removeItem('cirql:refCode')
+    localStorage.removeItem('cirql:points')
+    localStorage.removeItem('cirql:welcomeClaimed')
+    localStorage.removeItem('cirql:redeemed')
+  } catch {
+    /* ignore storage errors */
+  }
+}
+
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 const makeCode = (n = 4) => Array.from({ length: n }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('')
+
+/**
+ * Generates a distinct 4-character referral code uniquely tied to a specific user account.
+ * This ensures every account has its own separate, consistent code across sessions.
+ */
+function getAccountCode(userId) {
+  if (!userId) return ''
+  let hash = 5381
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) + hash + userId.charCodeAt(i)) >>> 0
+  }
+  let result = ''
+  for (let i = 0; i < 4; i++) {
+    result += CODE_CHARS[(hash >>> (i * 7)) % CODE_CHARS.length]
+    hash = (hash * 1664525 + 1013904223) >>> 0
+  }
+  return `CIRQL-${result}`
+}
+
+function getUserCode(id) {
+  if (!id) return ''
+  let c = store.get(`refCode:${id}`, null)
+  // If no code, or if polluted by old global NNQV code, generate the account's unique code
+  if (!c || c === 'CIRQL-NNQV') {
+    c = getAccountCode(id)
+    store.set(`refCode:${id}`, c)
+  }
+  return c
+}
 
 /* ---------------- animated doodles ---------------- */
 export function CoinJar() {
@@ -184,41 +227,83 @@ function useCount(value) {
 }
 
 export default function Rewards() {
-  const [points, setPoints] = useState(() => store.get('points', 0))
-  const [claimed, setClaimed] = useState(() => store.get('welcomeClaimed', false))
-  const [redeemed, setRedeemed] = useState(() => store.get('redeemed', {}))
-  const [burst, setBurst] = useState(0)
-  const [code] = useState(() => {
-    const saved = store.get('refCode', null)
-    if (saved) return saved
-    const c = `CIRQL-${makeCode()}`
-    store.set('refCode', c)
-    return c
+  const session = useSession()
+  const uid = session?.user?.id || session?.user?.email || null
+
+  const getStoredPoints = (id) => {
+    if (!id) return 0
+    let p = store.get(`points:${id}`, null)
+    if (p == null || p === 50) {
+      p = 0
+      store.set(`points:${id}`, 0)
+    }
+    return p
+  }
+
+  const [points, setPoints] = useState(() => getStoredPoints(uid))
+  const [claimed, setClaimed] = useState(() => {
+    if (!uid) return false
+    return store.get(`welcomeClaimed:${uid}`, false)
   })
+  const [redeemed, setRedeemed] = useState(() => {
+    if (!uid) return {}
+    return store.get(`redeemed:${uid}`, {})
+  })
+  const [burst, setBurst] = useState(0)
+  const [code, setCode] = useState(() => getUserCode(uid))
   const [copied, setCopied] = useState(false)
   const shown = useCount(points)
+
+  useEffect(() => {
+    if (!session) {
+      setPoints(0)
+      setClaimed(false)
+      setRedeemed({})
+      setCode('')
+      return
+    }
+    const currentUid = session.user?.id || session.user?.email
+    setPoints(getStoredPoints(currentUid))
+    setClaimed(store.get(`welcomeClaimed:${currentUid}`, false))
+    setRedeemed(store.get(`redeemed:${currentUid}`, {}))
+    setCode(getUserCode(currentUid))
+  }, [session])
 
   const next = REWARDS.filter((r) => !redeemed[r.id]).sort((a, b) => a.cost - b.cost).find((r) => r.cost > points)
   const progress = next ? Math.min(1, points / next.cost) : 1
 
   const claim = () => {
+    if (!session) {
+      navigate('/login')
+      return
+    }
     if (claimed) return
+    const currentUid = session.user?.id || session.user?.email
     const p = points + WELCOME_BONUS
     setPoints(p)
     setClaimed(true)
     setBurst((b) => b + 1)
-    store.set('points', p)
-    store.set('welcomeClaimed', true)
+    if (currentUid) {
+      store.set(`points:${currentUid}`, p)
+      store.set(`welcomeClaimed:${currentUid}`, true)
+    }
   }
 
   const redeem = (r) => {
+    if (!session) {
+      navigate('/login')
+      return
+    }
     if (points < r.cost || redeemed[r.id]) return
+    const currentUid = session.user?.id || session.user?.email
     const p = points - r.cost
     const nextRedeemed = { ...redeemed, [r.id]: `${r.id.slice(0, 3).toUpperCase()}-${makeCode(6)}` }
     setPoints(p)
     setRedeemed(nextRedeemed)
-    store.set('points', p)
-    store.set('redeemed', nextRedeemed)
+    if (currentUid) {
+      store.set(`points:${currentUid}`, p)
+      store.set(`redeemed:${currentUid}`, nextRedeemed)
+    }
   }
 
   const link = `${window.location.origin}/?ref=${code}`
@@ -305,31 +390,33 @@ export default function Rewards() {
           </div>
         </div>
 
-        {/* referral */}
-        <div className="refer" id="refer" data-reveal>
-          <ReferralDoodle />
-          <div className="refer__body">
-            <p className="refer__eyebrow">Refer &amp; earn</p>
-            <h3>Invite friends, you both get {REFERRAL_POINTS} points</h3>
-            <ol className="refer__steps">
-              <li><span>1</span> Share your code</li>
-              <li><span>2</span> Your friend books a pickup</li>
-              <li><span>3</span> You both earn {REFERRAL_POINTS} EcoPoints</li>
-            </ol>
-            <div className="refer__code">
-              <strong>{code}</strong>
-              <button type="button" onClick={copy}>{copied ? 'Copied!' : 'Copy'}</button>
-            </div>
-            <div className="refer__share">
-              <a className="btn btn--primary" href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer">
-                Share on WhatsApp
-              </a>
-              <button type="button" className="btn btn--ghost" onClick={share}>
-                <Icons.send width="18" height="18" /> More ways to share
-              </button>
+        {/* referral (only shown when logged in or signed up) */}
+        {session && (
+          <div className="refer is-in" id="refer" data-reveal>
+            <ReferralDoodle />
+            <div className="refer__body">
+              <p className="refer__eyebrow">Refer &amp; earn</p>
+              <h3>Invite friends, you both get {REFERRAL_POINTS} points</h3>
+              <ol className="refer__steps">
+                <li><span>1</span> Share your code</li>
+                <li><span>2</span> Your friend books a pickup</li>
+                <li><span>3</span> You both earn {REFERRAL_POINTS} EcoPoints</li>
+              </ol>
+              <div className="refer__code">
+                <strong>{code}</strong>
+                <button type="button" onClick={copy}>{copied ? 'Copied!' : 'Copy'}</button>
+              </div>
+              <div className="refer__share">
+                <a className="btn btn--primary" href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer">
+                  Share on WhatsApp
+                </a>
+                <button type="button" className="btn btn--ghost" onClick={share}>
+                  <Icons.send width="18" height="18" /> More ways to share
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </Section>
   )

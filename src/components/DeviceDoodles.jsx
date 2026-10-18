@@ -114,14 +114,15 @@ export function DeviceArt({ category = 'phone', condition, className }) {
 
 /* ---------- the story stage ---------- */
 function Tag({ x, y, text }) {
-  const w = 30 + text.length * 10
+  const display = text.length > 20 ? text.slice(0, 19) + '…' : text
+  const w = 30 + display.length * 9.5
   return (
     <g transform={`translate(${x} ${y})`}><g className="stage__tag">
       <path d="M0 0c10 10 18 18 22 30" stroke={GREEN} strokeWidth="2" fill="none" strokeDasharray="3 4" />
       <g transform="translate(14 28) rotate(8)">
         <path d={`M0 10 12 0h${w}a8 8 0 0 1 8 8v24a8 8 0 0 1-8 8H12L0 30Z`} fill="#fff" stroke={GREEN} strokeWidth="2.5" />
         <circle cx="12" cy="20" r="4" fill={GREEN} />
-        <text x={22 + w / 2} y="26.5" textAnchor="middle" fontFamily="Quicksand, sans-serif" fontWeight="700" fontSize="16" fill={INK}>{text}</text>
+        <text x={20 + w / 2} y="26.5" textAnchor="middle" fontFamily="Quicksand, sans-serif" fontWeight="700" fontSize="15" fill={INK}>{display}</text>
       </g>
     </g></g>
   )
@@ -150,10 +151,11 @@ function Bin() {
   )
 }
 
-export function Stage({ category, brand, age, condition, done }) {
+export function Stage({ category, brand, model, age, condition, done }) {
   const phone = category === 'phone'
   const origin = phone ? { x: 145, y: 118 } : { x: 70, y: 196 }
   const tagAt = phone ? { x: 282, y: 128 } : { x: 340, y: 206 }
+  const tagText = model || brand?.name
   return (
     <svg className="story-stage" viewBox="0 0 440 470" aria-hidden="true">
       <path d="M70 140c30-80 150-120 250-90s120 110 110 190-50 170-160 180S40 360 40 260c0-50 12-80 30-120Z" fill="#e2f4d8" />
@@ -176,7 +178,7 @@ export function Stage({ category, brand, age, condition, done }) {
           <g transform={`translate(${origin.x} ${origin.y})`}>
             {phone ? <PhoneG condition={condition} /> : <LaptopG condition={condition} />}
           </g>
-          {brand && <Tag key={brand.id} x={tagAt.x} y={tagAt.y} text={brand.name} />}
+          {brand && <Tag key={tagText} x={tagAt.x} y={tagAt.y} text={tagText} />}
           {age && Array.from({ length: age.level }, (_, i) => (
             <circle key={i} className="stage__dust" cx={120 + i * 52} cy={426 - (i % 2) * 8} r={3 + (i % 3)} fill="#b7c2bb" style={{ '--i': i }} />
           ))}

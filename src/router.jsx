@@ -35,6 +35,11 @@ export function Link({ to, onClick, requireAuth = false, authFallback = '/login'
       onClick={(e) => {
         if (requireAuth && !session) {
           e.preventDefault()
+          try {
+            sessionStorage.setItem('cirql:auth_redirect', to)
+          } catch {
+            /* storage blocked */
+          }
           navigate(authFallback)
           return
         }
