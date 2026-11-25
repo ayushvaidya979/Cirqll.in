@@ -42,12 +42,14 @@ body { background: var(--bg); }
 .nav { color: var(--text); }
 .btn--primary {
   background: var(--button-paint);
+  color: var(--white);
   box-shadow: 0 7px 20px -14px #009B6280;
   transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
 }
 .btn--primary:hover { background: var(--button-hover); box-shadow: 0 8px 24px -10px #009B624d; }
 .btn--ghost { border-color: var(--emerald); color: var(--emerald-deep); background: transparent; }
 .btn--ghost:hover { color: #fff; border-color: var(--sage); background: var(--sage); }
+#root .btn--ghost:hover { color: var(--white); border-color: var(--emerald-deep); background: var(--emerald-deep); }
 .nav .btn--ghost { background: transparent; }
 .nav .btn--ghost:hover { background: var(--emerald-deep); color: var(--white); }
 .nav > a:not(.btn):hover { color: var(--emerald); }
@@ -151,6 +153,7 @@ svg [stroke="#9ccf8d"] { stroke: #68c833; }
 .reward__art { background: linear-gradient(140deg, #d8fff6, #f3ffda); }
 .reward__btn:not(:disabled) { background: var(--button-paint); }
 .reward__btn:disabled { background: #eaf5f0; }
+.reward__cost { color: var(--emerald-deep); }
 .refer { background: linear-gradient(110deg, #e2fff7, #f2ffdc); }
 .cta { background: var(--deep-paint); }
 .cta .btn--light { background: #fff; color: #007454; }
