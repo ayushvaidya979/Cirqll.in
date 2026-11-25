@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import Header from './components/Header.jsx'
 import Hero from './components/Hero.jsx'
+import ThemePaint from './components/ThemePaint.jsx'
 import { Features, HowItWorks, Flow, Partners, Closing } from './components/Sections.jsx'
 import Journey from './components/Journey.jsx'
 import Rewards from './components/Rewards.jsx'
@@ -54,6 +55,7 @@ export default function App() {
 
   return (
     <>
+      <ThemePaint />
       <Header />
       <Suspense fallback={<main style={{ minHeight: '100vh' }} />}>
         {authCallbackRoute ? (

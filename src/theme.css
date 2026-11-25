@@ -1,0 +1,212 @@
+/* Emerald paint, electric lime and an aqua wash, shared by every route. */
+:root {
+  --emerald: #009B62;
+  --emerald-deep: #006B46;
+  --lime: #84D900;
+  --teal: #00C9A7;
+  --mint: #B5F8E8;
+  --background: #F8FFFC;
+  --background-secondary: #ECFFF6;
+  --text: #172B26;
+  --text-secondary: #52635F;
+  --white: #FFFFFF;
+
+  /* Aliases used by existing components; no layout or behaviour changes. */
+  --bg: var(--background);
+  --ink: var(--text);
+  --muted: var(--text-secondary);
+  --sage: var(--emerald);
+  --sage-light: var(--lime);
+  --leaf: var(--emerald);
+  --leaf-dark: var(--emerald-deep);
+  --leaf-soft: var(--background-secondary);
+  --line: color-mix(in srgb, var(--emerald) 18%, var(--white));
+  --paper: var(--white);
+  --tint: var(--background-secondary);
+  --goldsoft: #fff3bf;
+  --aqua: var(--teal);
+  --aqua-dark: var(--emerald-deep);
+  --surface-shadow: 0 2px 4px #006B4605, 0 24px 50px -30px #006B462e;
+  --focus-ring: color-mix(in srgb, var(--teal) 22%, transparent);
+  /* Keep the centre behind white labels dark; lime lights the outer edge. */
+  --button-paint: linear-gradient(110deg, #008F62 0%, #007F54 14%, #007B50 88%, #00B86B 98%, var(--lime) 100%);
+  --button-hover: linear-gradient(110deg, #007D54 0%, var(--emerald-deep) 88%, var(--emerald) 98%, var(--lime) 100%);
+  --deep-paint: linear-gradient(130deg, var(--emerald-deep), #005B45 65%, #008D79);
+  --soft-paint: radial-gradient(ellipse at 90% 15%, color-mix(in srgb, var(--mint) 28%, transparent), transparent 58%), linear-gradient(145deg, var(--background), var(--background-secondary));
+  --paint-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='100'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.035 .18' numOctaves='2' seed='12'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23g)' opacity='.16' d='M0 0h220v100H0z'/%3E%3C/svg%3E");
+}
+
+.theme-paint { position: absolute; pointer-events: none; overflow: hidden; }
+body { background: var(--bg); }
+.header { background: linear-gradient(180deg, var(--background) 55%, transparent); }
+.nav { color: var(--text); }
+.btn--primary {
+  background: var(--button-paint);
+  box-shadow: 0 7px 20px -14px #009B6280;
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+.btn--primary:hover { background: var(--button-hover); box-shadow: 0 8px 24px -10px #009B624d; }
+.btn--ghost { border-color: var(--emerald); color: var(--emerald-deep); background: transparent; }
+.btn--ghost:hover { color: #fff; border-color: var(--sage); background: var(--sage); }
+.nav .btn--ghost { background: transparent; }
+.nav .btn--ghost:hover { background: var(--emerald-deep); color: var(--white); }
+.nav > a:not(.btn):hover { color: var(--emerald); }
+.nav__avatar { background: var(--button-paint); }
+
+/* Pigment in the letters, rather than a flat colour on top of the paper. */
+.stage__line--1,
+.heading__a,
+.about-h1 span:first-child,
+.about-h2 span:first-child,
+.partner-page h1 span:first-child,
+.pp-h2 span:first-child,
+.sell h1 span:first-child {
+  color: var(--sage);
+  background-image: var(--paint-texture), linear-gradient(115deg, var(--emerald), var(--emerald-deep) 75%, var(--emerald));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.stage__line--2,
+.heading__b,
+.about-h1 span:last-child,
+.about-h2 span:last-child,
+.partner-page h1 span:last-child,
+.pp-h2 span:last-child,
+.sell h1 span:last-child {
+  color: var(--sage-light);
+  background-image: var(--paint-texture), linear-gradient(105deg, var(--lime), #71C500 75%, #56B51C);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.heading--light .heading__a { background: none; color: #fff; -webkit-text-fill-color: currentColor; }
+.heading--light .heading__b { background: none; color: #c8ff7c; -webkit-text-fill-color: currentColor; }
+
+/* The hero sequence stays intact; its paper and green pigments are balanced
+   at presentation time, leaving the original frame assets untouched. */
+.hero,
+.hero__sticky { background: radial-gradient(ellipse at 86% 44%, color-mix(in srgb, var(--mint) 62%, transparent), transparent 46%), linear-gradient(110deg, var(--white) 24%, var(--background) 68%, var(--background-secondary)); }
+.hero__media { filter: url(#hero-colour); }
+.hero__canvas { background: #fff; }
+.hero__leaves { filter: url(#paint-grain); }
+.hero__canopy-leaves { filter: url(#paint-grain); }
+.hero__leaves [fill="#bfe6b3"] { fill: url(#paint-lime); }
+.hero__leaves [fill="#d3efc9"] { fill: url(#paint-teal); }
+.hero__scroll-caption { color: var(--text-secondary); }
+
+/* Paint fills preserve each SVG's geometry and its existing animations. */
+svg [fill="#1e9e57"],
+svg [fill="#1fa855"],
+svg [fill="#178a45"],
+svg [fill="#147a41"] { fill: url(#paint-emerald); }
+svg [fill="#5cbf45"],
+svg [fill="#6fcf4e"],
+svg [fill="#6cc644"],
+svg [fill="#7ac142"],
+svg [fill="#9ad889"],
+svg [fill="#a8d893"] { fill: url(#paint-lime); }
+svg [fill="#1fb3a0"],
+svg [fill="#bfe9e3"] { fill: url(#paint-teal); }
+svg [fill="#c6ebb2"],
+svg [fill="#bfe6b3"],
+svg [fill="#c2e2b3"],
+svg [fill="#d3efc9"] { fill: url(#paint-mint); }
+svg [fill="#dff3d4"],
+svg [fill="#e2f4d8"],
+svg [fill="#d5ebca"],
+svg [fill="#dbeed2"] { fill: url(#paint-wash); }
+svg [fill="#fbfaf6"],
+svg [fill="#eef8e8"] { fill: var(--background); }
+svg [fill="#f6b92b"] { fill: url(#paint-gold); }
+svg [stroke="#1e9e57"],
+svg [stroke="#147a41"] { stroke: #00855d; }
+svg [stroke="#5cbf45"],
+svg [stroke="#8fd07a"],
+svg [stroke="#a6dc95"],
+svg [stroke="#9ccf8d"] { stroke: #68c833; }
+
+.section--cream { background: radial-gradient(ellipse at 0 35%, #edfff8 0, transparent 60%), var(--paper); }
+.section--tint { background: var(--soft-paint); }
+.section--dark { background: var(--deep-paint); }
+.tone-sage { --tone: var(--emerald); --tone-soft: var(--background-secondary); }
+.tone-leaf { --tone: var(--lime); --tone-soft: color-mix(in srgb, var(--lime) 15%, var(--white)); }
+.tone-gold { --tone: #dba514; --tone-soft: #fff4c7; }
+.tone-teal { --tone: var(--teal); --tone-soft: color-mix(in srgb, var(--mint) 42%, var(--white)); }
+.tone-olive { --tone: var(--emerald); --tone-soft: color-mix(in srgb, var(--lime) 10%, var(--white)); }
+.feature { background: var(--white); box-shadow: var(--surface-shadow); }
+.feature__icon { background: linear-gradient(145deg, color-mix(in srgb, var(--tone) 72%, #92f0b8), var(--tone)); }
+.steps__num { background: var(--button-paint); }
+.flow__art { background: radial-gradient(ellipse at 70% 20%, #efffd8, #fff 65%); }
+.flow__arrow { color: #00b996; }
+.impact__item { background: var(--white); box-shadow: var(--surface-shadow); }
+.impact__icon { background: var(--button-paint); }
+.journey__base { stroke: #c7eee0; }
+.journey__drawn { stroke: url(#paint-emerald); }
+.stop__node { border-color: #c7eee0; }
+.stop.is-reached .stop__node { background: var(--button-paint); }
+.stop__chip { color: #006b52; background: #d9fff0; }
+.wallet { background: var(--deep-paint); }
+.wallet__bar i { background: linear-gradient(90deg, #00e8bf, #b1ee00); }
+.reward__art { background: linear-gradient(140deg, #d8fff6, #f3ffda); }
+.reward__btn:not(:disabled) { background: var(--button-paint); }
+.reward__btn:disabled { background: #eaf5f0; }
+.refer { background: linear-gradient(110deg, #e2fff7, #f2ffdc); }
+.cta { background: var(--deep-paint); }
+.cta .btn--light { background: #fff; color: #007454; }
+.site-footer { background: linear-gradient(130deg, #063c33, #005748 65%, #00615a); }
+.site-footer__column h3 { color: #c8ffbd; }
+.site-footer__bottom { border-top-color: #ffffff20; }
+.footer__link:hover, .footer__link:focus-visible { color: var(--mint); }
+.site-footer .footer__link--disabled { color: #b5cfc7; }
+.stop__tag, .refer__eyebrow { color: var(--emerald-deep); }
+
+/* The same paper and pigment follow people beyond the landing page. */
+#root :is(.auth, .sell, .partner-page, .about-page) { background: var(--soft-paint); }
+#root .auth__side { background: radial-gradient(ellipse at 25% 15%, #d6fff3, transparent 65%), linear-gradient(145deg, #f0fffc, #eaffdb); }
+#root :is(.auth__card, .wizard, .pp-form-card) { background: var(--white); box-shadow: var(--surface-shadow); }
+#root .auth__tabs { background: #edfbf4; }
+#root :is(.auth__form input, .pf-field input, .pf-field select, .pf-field textarea) { background: #fbfffd; border-color: #dcece5; }
+#root :is(.auth__done-icon, .pp-sent__icon, .benefit__icon) { background: var(--button-paint); }
+#root .about-hero { background: radial-gradient(ellipse at 95% 15%, #d8fff2, transparent 65%); }
+#root :is(.about-hero__overview, .about-offer-card, .about-journey__content, .about-cta-card) { border-color: var(--line); background: var(--white); box-shadow: var(--surface-shadow); }
+#root .about-values__card { background: var(--deep-paint); }
+#root .about-val-stat__num { color: var(--lime); }
+#root .about-overview__lead strong { color: var(--emerald-deep); }
+#root .photo__opt--main { background: linear-gradient(150deg, #e5fff7, #f1ffdc); }
+#root .opt.is-picked { border-color: #00aa7c; background: #f0fff7; }
+#root .match__chips span.is-green { background: var(--button-paint); }
+#root .pp-dots li.is-on span { background: var(--button-paint); }
+#root .pp-benefits { background: var(--soft-paint); }
+#root :is(.pp-kicker, .chapter__kicker, .about-offer-card__tag) { color: var(--emerald-deep); }
+#root :is(.auth__form input, .pf-field input, .pf-field select, .pf-field textarea, .search input, .photo__opt, .opt) { border-color: var(--line); }
+#root .opt.is-picked { border-color: var(--emerald); }
+#root :is(.auth__form input, .pf-field input, .pf-field select, .pf-field textarea):focus { border-color: var(--emerald); box-shadow: 0 0 0 3px var(--focus-ring); }
+#root .pf-field.has-error input { border-color: #b84422; }
+#root .btn--google { border-color: var(--line); }
+#root .btn--google:hover:not(:disabled) { border-color: var(--emerald); background: var(--background); }
+.cam__corner { border-color: var(--teal); }
+.cam__beam { background: var(--teal); box-shadow: 0 0 18px 6px #00C9A74d; }
+
+@media (prefers-contrast: more) {
+  .stage__line, .heading__a, .heading__b,
+  .about-h1 span, .about-h2 span,
+  .partner-page h1 span, .pp-h2 span, .sell h1 span {
+    background: none;
+    color: var(--emerald-deep);
+    -webkit-text-fill-color: currentColor;
+  }
+  .heading--light .heading__a, .heading--light .heading__b { color: var(--white); }
+  .btn--primary { background: var(--emerald-deep); }
+}
+
+@media (max-width: 900px) {
+  .header.is-open { background: var(--bg); }
+  .nav { background: var(--bg); }
+}
+
+@media (forced-colors: active) {
+  .stage__line, .heading__a, .heading__b,
+  .about-h1 span, .about-h2 span,
+  .partner-page h1 span, .pp-h2 span, .sell h1 span { background: none; -webkit-text-fill-color: currentColor; }
+}
