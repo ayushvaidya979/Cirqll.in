@@ -96,6 +96,23 @@ function goToNext(e) {
   window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: reduce ? 'auto' : 'smooth' })
 }
 
+function CanopyLeaves({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 280 120" fill="none" aria-hidden="true">
+      <path d="M12 88c58 14 98-11 136-24 39-14 68-7 116 17" stroke="#9ccf8d" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="3 7" />
+      <path d="M34 79C20 53 30 27 61 15c8 28-2 51-27 64Z" fill="#d5ebca" />
+      <path d="M34 79c4-20 11-37 21-52" stroke="#6eb85b" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M91 75c-1-24 14-42 43-47-2 26-18 43-43 47Z" fill="#a8d893" />
+      <path d="M91 75c10-15 22-28 36-38" stroke="#529e47" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M163 61c-15-16-12-37 8-54 13 18 10 38-8 54Z" fill="#dbeed2" />
+      <path d="M163 61c2-15 4-29 7-43" stroke="#85bf72" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M213 69c10-20 31-28 57-19-12 21-32 28-57 19Z" fill="#c2e2b3" />
+      <path d="M213 69c16-7 31-12 45-14" stroke="#75b861" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M79 21v10m-5-5h10M210 100v8m-4-4h8" stroke="#83bd6c" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export default function Hero() {
   const sectionRef = useRef(null)
   const canvasRef = useRef(null)
@@ -104,6 +121,14 @@ export default function Hero() {
   const session = useSession()
   const [stage, setStage] = useState(0)
   const [scrolled, setScrolled] = useState(false)
+
+  const startStory = () => {
+    const section = sectionRef.current
+    const top = section.getBoundingClientRect().top + window.scrollY
+    const storyLength = section.offsetHeight - stickyRef.current.offsetHeight - window.innerHeight
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    window.scrollTo({ top: top + storyLength * 0.3, behavior: reduce ? 'auto' : 'smooth' })
+  }
 
   useEffect(() => {
     const section = sectionRef.current
@@ -302,6 +327,18 @@ export default function Hero() {
       <div ref={stickyRef} className="hero__sticky">
         <h1 className="sr-only">Cirql: sell and recycle your old electronics with free doorstep pickup</h1>
 
+        <div className={`hero__canopy ${scrolled ? 'is-hidden' : ''}`}>
+          <CanopyLeaves className="hero__canopy-leaves hero__canopy-leaves--left" />
+          <button type="button" className="hero__scroll-start" onClick={startStory} tabIndex={scrolled ? -1 : 0} aria-label="Scroll down to follow the recycling story">
+            <span>Scroll down</span>
+            <span className="hero__scroll-caption">a new life starts here</span>
+            <svg className="hero__scroll-arrow" viewBox="0 0 32 44" fill="none" aria-hidden="true">
+              <path d="M14 3c9 10-7 16-1 26 2 3 5 6 7 10m-10-5 10 5 4-10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <CanopyLeaves className="hero__canopy-leaves hero__canopy-leaves--right" />
+        </div>
+
         <div className="hero__media" aria-hidden="true">
           <canvas ref={canvasRef} className="hero__canvas" />
         </div>
@@ -349,10 +386,6 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className={`hero__cue ${scrolled ? 'is-hidden' : ''}`} aria-hidden="true">
-          <span className="hero__mouse" />
-          Scroll to explore
-        </div>
       </div>
     </section>
   )
