@@ -67,7 +67,7 @@ export default function App() {
         ) : path.startsWith('/about') ? (
           <AboutPage />
         ) : authRoute ? (
-          <AuthPage mode={path.startsWith('/signup') ? 'signup' : 'login'} />
+          <AuthPage key={path} mode={path.startsWith('/signup') ? 'signup' : 'login'} />
         ) : (
           <Home />
         )}

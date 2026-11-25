@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { navigate } from '../router.jsx'
 import { supabase, hasSupabase } from '../lib/supabase.js'
 import { formatSession, saveSession } from '../lib/auth.js'
@@ -8,12 +8,8 @@ import './AuthPage.css'
 export default function AuthCallback() {
   const [status, setStatus] = useState('processing') // 'processing' | 'success' | 'error'
   const [errorMessage, setErrorMessage] = useState('')
-  const processedRef = useRef(false)
 
   useEffect(() => {
-    if (processedRef.current) return
-    processedRef.current = true
-
     let active = true
 
     async function finishSignIn() {
@@ -38,51 +34,20 @@ export default function AuthCallback() {
         return
       }
 
-      const code = searchParams.get('code')
-
       try {
-        let session = null
-
-        // If authorization code is present (PKCE flow), exchange it for a session
-        if (code) {
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-          if (exchangeError) {
-            // Check if Supabase auto-detection already resolved the session
-            const { data: current } = await supabase.auth.getSession()
-            if (current?.session) {
-              session = current.session
-            } else {
-              throw exchangeError
-            }
-          } else {
-            session = data?.session
-          }
-        } else {
-          // If implicit flow or code already consumed, check current session
-          const { data, error: sessionError } = await supabase.auth.getSession()
-          if (sessionError) throw sessionError
-          session = data?.session
-        }
-
-        // Wait briefly if session is still settling
-        if (!session) {
-          session = await new Promise((resolve) => {
-            const timeout = setTimeout(() => resolve(null), 3500)
-            const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-              if (s) {
-                clearTimeout(timeout)
-                subscription?.unsubscribe()
-                resolve(s)
-              }
-            })
-          })
-        }
+        // detectSessionInUrl owns the one-time PKCE exchange. Wait for it
+        // instead of exchanging the same code again from a React effect.
+        const { error: initError } = await supabase.auth.initialize()
+        if (initError) throw initError
+        const { data, error: sessionError } = await supabase.auth.getSession()
+        if (sessionError) throw sessionError
+        const session = data?.session
 
         if (!active) return
 
         if (!session) {
           setStatus('error')
-          setErrorMessage('Could not establish an authenticated session. Please try logging in again.')
+          setErrorMessage('This sign-in link has expired or was opened in a different browser. Please start again from Log in.')
           return
         }
 
@@ -105,8 +70,7 @@ export default function AuthCallback() {
         }
 
         // Replace history state to clean the OAuth code from URL and navigate to target
-        window.history.replaceState({}, '', target)
-        navigate(target)
+        navigate(target, { replace: true })
       } catch (err) {
         if (!active) return
         console.error('OAuth callback error:', err)
@@ -131,7 +95,7 @@ export default function AuthCallback() {
             <div className="auth__callback-state">
               <span className="auth__spinner-large" aria-hidden="true" />
               <h2>Completing sign-in…</h2>
-              <p>Please wait while we securely log you in with Google.</p>
+              <p>Please wait while we securely complete your sign-in.</p>
             </div>
           )}
 

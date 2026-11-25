@@ -55,13 +55,12 @@ function AuthDoodle() {
 
 export default function AuthPage({ mode: initial = 'login' }) {
   const session = useSession()
-  const [mode, setMode] = useState(initial)
+  const mode = initial
   const [form, setForm] = useState({ name: '', email: '', password: '', referralCode: '' })
   const [status, setStatus] = useState('idle') // idle | busy | confirm
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => setMode(initial), [initial])
   useEffect(() => {
     document.title = `${mode === 'signup' ? 'Sign up' : 'Log in'} · Cirql`
     return () => {
@@ -72,11 +71,10 @@ export default function AuthPage({ mode: initial = 'login' }) {
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
   const switchTo = (m) => {
-    setMode(m)
     setError('')
     setStatus('idle')
     setGoogleLoading(false)
-    window.history.replaceState({}, '', m === 'signup' ? '/signup' : '/login')
+    navigate(m === 'signup' ? '/signup' : '/login', { replace: true })
   }
 
   const handleGoogleSignIn = async () => {

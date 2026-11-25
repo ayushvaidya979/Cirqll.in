@@ -20,8 +20,8 @@ const subscribe = (cb) => {
 
 export const usePath = () => useSyncExternalStore(subscribe, () => window.location.pathname)
 
-export function navigate(to) {
-  window.history.pushState({}, '', to)
+export function navigate(to, { replace = false } = {}) {
+  window.history[replace ? 'replaceState' : 'pushState']({}, '', to)
   window.dispatchEvent(new PopStateEvent('popstate'))
   window.scrollTo(0, 0)
 }

@@ -28,15 +28,9 @@ export function formatSession(s) {
   }
 }
 
-function read() {
-  try {
-    return JSON.parse(localStorage.getItem(STORE)) || null
-  } catch {
-    return null
-  }
-}
-
-let session = read()
+// The SDK restores and refreshes persisted sessions. Do not treat a stale
+// snapshot from a previous visit as a signed-in user during startup.
+let session = null
 
 export function saveSession(s) {
   session = s
@@ -56,13 +50,14 @@ function friendly(data) {
   if (/already registered|already been registered/i.test(msg)) return 'An account with this email already exists. Try logging in.'
   if (/password should be at least/i.test(msg)) return 'Password must be at least 6 characters.'
   if (/rate limit|too many/i.test(msg)) return 'Too many attempts. Please wait a minute and try again.'
+  if (/failed to fetch|network|fetch failed/i.test(msg)) return 'We couldn’t reach the sign-in service. Please try again in a moment.'
   return msg || 'Something went wrong. Please try again.'
 }
 
 /** Returns { needsConfirmation } when the project requires email confirmation. */
 export async function signUp({ name, email, password }) {
   if (!supabase) throw new Error('Supabase is not configured.')
-  const redirect = `${window.location.origin}/login`
+  const redirect = `${window.location.origin}/auth/callback`
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -100,18 +95,8 @@ export const signInWithGoogle = googleSignIn
 
 // Synchronize session reactively with Supabase SDK
 if (typeof window !== 'undefined' && supabase) {
-  supabase.auth.getSession().then(({ data: { session: s } }) => {
-    if (s) {
-      saveSession(formatSession(s))
-    }
-  }).catch(() => {})
-
-  supabase.auth.onAuthStateChange((event, s) => {
-    if (event === 'SIGNED_OUT') {
-      saveSession(null)
-    } else if (s) {
-      saveSession(formatSession(s))
-    }
+  supabase.auth.onAuthStateChange((_event, s) => {
+    saveSession(formatSession(s))
   })
 }
 
